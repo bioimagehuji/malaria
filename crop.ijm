@@ -1,4 +1,5 @@
 // This script uses apicoplast and nucleus fluorescence to crop Malaria infected RBCs from a large image.
+// The last channel is assumed to be brightfield.
 
 CROP_WIDTH = 150; // Width/height (in pixels) of each cell crop
 MINIMUM_APICOPLAST_AREA = 7; // [microns] Smallest apicoplast size for each crop. Area, in microns, after 2D projection.
