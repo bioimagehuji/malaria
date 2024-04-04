@@ -15,17 +15,15 @@ dirCropOutput = dirname + File.separator + basename + "_crops";
 print("dirCropOutput:", dirCropOutput);
 
 
+// Open large image to read number of channels
 run("Bio-Formats Importer", "open=[" + orig_filename + "] color_mode=Default rois_import=[ROI manager] " + 
 	"view=Hyperstack stack_order=XYCZT use_virtual_stack");
 rename("virtual");
-
-
-// Open large image. 
-Stack.getDimensions(im_width, im_height, channels, slices, frames);
+Stack.getDimensions(im_width, im_height, channels, slices, frames);
 // Only open first 1/2 channels which are fluorescent, and not the last channel, which is brightfield.
 channels_to_open = channels - 1;
 
-// For speed only open 1 in 3 z-slices and 1-in-3 time frames.
+// For speed, open only 1 in 3 z-slices and 1-in-3 time frames.
 // Only open first 1/2 channels which are fluorescent, and not the last channel, which is brightfield.
 // Open large image. 
 run("Bio-Formats Importer", "open=[" + orig_filename + "] color_mode=Default rois_import=[ROI manager] " + 
