@@ -53,7 +53,6 @@ for (series=1; series<=seriesCount; ++series) {
 	// Do max intensity projection of Z,C,T to capture the location of the cells/crops
 	// Projection Z
 	run("Z Project...", "projection=[Max Intensity] all");
-
 	rename("MIP_z");
 	
 	// Projection time
@@ -85,6 +84,7 @@ for (series=1; series<=seriesCount; ++series) {
 
 	// Loop on ROIs and crop to files
 	File.makeDirectory(dirCropOutput);
+	File.makeDirectory(dirCropOutput+ "/thumbnails");
 	selectWindow("thresh");
 	crop_number = 0;
 	    for (roi_id=0; roi_id<roiManager("count"); ++roi_id) {
@@ -126,7 +126,7 @@ for (series=1; series<=seriesCount; ++series) {
 
 	        run("Duplicate...", "title=crop_thumbnail"); // crop the thumbnail 2D image
 			thumbnail_name = "thumbnail_"+ crop_name;
-	        saveAs("Tiff", dirCropOutput+File.separator + thumbnail_name);
+	        saveAs("Tiff", dirCropOutput+ "/thumbnails/" + thumbnail_name);
 
 			close(crop_name);
 	        close(thumbnail_name);
