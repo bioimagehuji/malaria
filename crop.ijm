@@ -118,7 +118,7 @@ for (series=1; series<=seriesCount; ++series) {
         	" y_coordinate_1=" + y +" height_1=" + CROP_WIDTH );
         print("done reading");
         crop_number += 1;
-        crop_name = "crop_S" + series +"_" + crop_number + ".tif";
+        crop_name = "crop_S" + series +"_CROPNUM" + crop_number + ".tif";
         saveAs("Tiff", dirCropOutput+File.separator+crop_name);
 
         // Create a 2D thumbnail image of crop projected in Z an T with threshold
