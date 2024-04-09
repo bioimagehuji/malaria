@@ -87,58 +87,56 @@ for (series=1; series<=seriesCount; ++series) {
 	File.makeDirectory(dirCropOutput+ "/thumbnails");
 	selectWindow("thresh");
 	crop_number = 0;
-	    for (roi_id=0; roi_id<roiManager("count"); ++roi_id) {
-	        print("ROI+1:", roi_id+1);
-	        roiManager("Select", roi_id);
-	        run("To Bounding Box");
-	        Roi.getBounds(x, y, width, height);
-			//        print("xs" , x, x + width);
-	      	xcenter = x + floor(width/2);
-	      	x = xcenter - floor(CROP_WIDTH/2);
-			//    	print("new xs" , x, x+CROP_WIDTH);
-	    	if ((x < 0) || (x+CROP_WIDTH > getWidth())) {
-	    		print("Skipping ROI, out of image bounds:", x, x+CROP_WIDTH);
-	    		continue;
-	    	}
-	        print("y" , y, y+height);
-	        ycenter = y+floor(height/2);
-	        y = ycenter - floor(CROP_WIDTH / 2);
-	    	print("new ys" , y, y+CROP_WIDTH);
-	    	if ((y < 0) || (y+CROP_WIDTH > getHeight())) {
-	    		print("Skipping ROI, out of image bounds:", y, y+CROP_WIDTH);
-	    		continue;
-	    	}
-			makeRectangle(x, y, CROP_WIDTH, CROP_WIDTH);
-			print("Reading crop from large image...");
+    for (roi_id=0; roi_id<roiManager("count"); ++roi_id) {
+        print("ROI+1:", roi_id+1);
+        roiManager("Select", roi_id);
+        run("To Bounding Box");
+        Roi.getBounds(x, y, width, height);
+		//        print("xs" , x, x + width);
+      	xcenter = x + floor(width/2);
+      	x = xcenter - floor(CROP_WIDTH/2);
+		//    	print("new xs" , x, x+CROP_WIDTH);
+    	if ((x < 0) || (x+CROP_WIDTH > getWidth())) {
+    		print("Skipping ROI, out of image bounds:", x, x+CROP_WIDTH);
+    		continue;
+    	}
+        print("y" , y, y+height);
+        ycenter = y+floor(height/2);
+        y = ycenter - floor(CROP_WIDTH / 2);
+    	print("new ys" , y, y+CROP_WIDTH);
+    	if ((y < 0) || (y+CROP_WIDTH > getHeight())) {
+    		print("Skipping ROI, out of image bounds:", y, y+CROP_WIDTH);
+    		continue;
+    	}
+		makeRectangle(x, y, CROP_WIDTH, CROP_WIDTH);
+		print("Reading crop from large image...");
 
-			// Load crop
-			run("Bio-Formats Importer", "open=[" + orig_filename + "] color_mode=Default crop " +
-				" rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT " + 
-	        	" x_coordinate_1=" + x +" width_1=" + CROP_WIDTH + 
-	        	" y_coordinate_1=" + y +" height_1=" + CROP_WIDTH );
-	        print("done reading");
-	        crop_number += 1;
-	        crop_name = "S" +series+ "_crop_" + crop_number + ".tif";
-	        saveAs("Tiff", dirCropOutput+File.separator+crop_name);
+		// Load crop
+		run("Bio-Formats Importer", "open=[" + orig_filename + "] color_mode=Default crop " +
+			" rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT " + 
+        	" x_coordinate_1=" + x +" width_1=" + CROP_WIDTH + 
+        	" y_coordinate_1=" + y +" height_1=" + CROP_WIDTH );
+        print("done reading");
+        crop_number += 1;
+        crop_name = "crop_S" + series +"_" + crop_number + ".tif";
+        saveAs("Tiff", dirCropOutput+File.separator+crop_name);
 
-	        // Create a 2D thumbnail image of crop projected in Z an T with threshold
-	        selectWindow("thresh");
+        // Create a 2D thumbnail image of crop projected in Z an T with threshold
+        selectWindow("thresh");
+        run("Duplicate...", "title=crop_thumbnail"); // crop the thumbnail 2D image
+		thumbnail_name = "thumbnail_"+ crop_name;
+        saveAs("Tiff", dirCropOutput+ "/thumbnails/" + thumbnail_name);
 
-	        run("Duplicate...", "title=crop_thumbnail"); // crop the thumbnail 2D image
-			thumbnail_name = "thumbnail_"+ crop_name;
-	        saveAs("Tiff", dirCropOutput+ "/thumbnails/" + thumbnail_name);
-
-			close(crop_name);
-	        close(thumbnail_name);
-			print("Finished crop " + crop_name);
-	    }
- // for crop
-	    close("thresh");
-        close("thresh_channels");
-        close("MIP_time");
-        close("MIP_z");
-        close("orig_series");
-        print("Finished series " + series);
+		close(crop_name);
+        close(thumbnail_name);
+		print("Finished crop " + crop_name);
+    } // for crop
+    close("thresh");
+    close("thresh_channels");
+    close("MIP_time");
+    close("MIP_z");
+    close("orig_series");
+    print("Finished series " + series);
 } // series
 print("Finished large image");
 waitForUser("Done");
