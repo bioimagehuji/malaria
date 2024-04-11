@@ -32,6 +32,7 @@ Ext.Manager3D_Reset();
 
 filelist = getFileList(crops_dir);
 for (crop_file_i = 0; crop_file_i < lengthOf(filelist); crop_file_i++) {
+	showProgress(crop_file_i, lengthOf(filelist));
     crop_image_name = filelist[crop_file_i];
     print("crop_image_name:", crop_image_name);
     if (endsWith(crop_image_name, ".tif")) { 
