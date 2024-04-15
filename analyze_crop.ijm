@@ -1,5 +1,8 @@
 // Analyze crop images. 
 // Segment the apicoplast and measure. Get the mean intensity and volume.
+// 
+// Plugin requirements:
+// - 3D ImageJ Suite
 
 // TODO
 // - Mean intensity
@@ -37,12 +40,7 @@ for (crop_file_i = 0; crop_file_i < lengthOf(filelist); crop_file_i++) {
     print("crop_image_name:", crop_image_name);
     if (endsWith(crop_image_name, ".tif")) { 
 		crop_image_basename = File.getNameWithoutExtension(crop_image_name);
-//    	series = replace(crop_image_basename, "crop_S(\\d{1,8})_.*", "$1");  // this doesnt seem to change crop_image_basename
-//    	// see: https://forum.image.sc/t/using-regex-to-extract-substrings-in-imagej-macro-language/89049/4
-//    	crop_num = replace(crop_image_basename, "crop_S\\d{1,8}_CROPNUM(\\d{1,8}).*", "$1");
 		print("crop_image_basename:", crop_image_basename);
-//		print("series:", series);
-//		print("crop_num:", crop_num);
 		crop_image_path = crops_dir + "/" + crop_image_name;
         print("crop_image_path:", crop_image_path);
         // Open large 5D image virtually to get the number of frames
@@ -74,36 +72,69 @@ for (crop_file_i = 0; crop_file_i < lengthOf(filelist); crop_file_i++) {
 				// Segmentation
 				setThreshold(APICOPLAST_THRESHOLD,65535);
 				run("Convert to Mask", "background=Dark black create stack");
-				rename("MASK_crop_" + cur_frame_name);
-				// Measure 3D object
+				masked_crop = "MASK_crop_" + cur_frame_name;
+				rename(masked_crop);
+				print("masked_crop:", masked_crop);
 
-			    run("3D Manager Options", "volume integrated_density ");
-				// run the manager 3D and add image
+				run("3D Manager Options", "volume integrated_density ");
 				
+				
+				// Measure Volume
+				//
+				selectImage(masked_crop);
+				Ext.Manager3D_Reset();
 				Ext.Manager3D_AddImage();
-				// https://mcib3d.frama.io/3d-suite-imagej/uploads/MacrosFunctionsRoiManager3D.pdf
+				// see https://mcib3d.frama.io/3d-suite-imagej/uploads/MacrosFunctionsRoiManager3D.pdf
+				Ext.Manager3D_Count(nb_obj);
+				print("number of objects",nb_obj);
 				
+				if (nb_obj > 1) {
+					exit("Numbner of objects in mask should be 1, but found " + nb_obj);
+				}					
+				if (nb_obj > 0) {
+					Ext.Manager3D_Select(0);
+					Ext.Manager3D_GetName(0, obj_name);
+					Ext.Manager3D_Rename(cur_frame_name + "_" + obj_name);
+					Ext.Manager3D_DeselectAll(); // to measure all objects
+					Ext.Manager3D_Measure();
+					// Save
+					Ext.Manager3D_SaveResult("M",spreadsheets_dir + "/"+ crop_image_basename + "_"+ cur_frame_name +"_volume.csv"); // "M" saves Measure 
+					// Source: google: RoiManager3D_2.java
+					Ext.Manager3D_CloseResult("M");
+				}
+				
+				// Measure number of objects
+				//
+				selectImage(masked_crop);
+				Ext.Manager3D_Reset();
+				Ext.Manager3D_Segment(128, 255);
+				Ext.Manager3D_AddImage();
+				run("3D Manager");  // update to see the objects in the manager
+				
+				im_name_for_num_of_obj = cur_frame_name+"_3dseg";
+				rename(im_name_for_num_of_obj);
 				Ext.Manager3D_Count(nb_obj);
 				print("number of objects",nb_obj);
 				if (nb_obj > 0) {
 					for (object=0; object<nb_obj;object++) {
 						Ext.Manager3D_Select(object);
-						Ext.Manager3D_GetName(0, obj_name);
+						Ext.Manager3D_GetName(object, obj_name);
 						Ext.Manager3D_Rename(cur_frame_name + "_" + obj_name);
 					}
+					Ext.Manager3D_DeselectAll(); // to measure all objects
+					Ext.Manager3D_Measure();
 				}
-				Ext.Manager3D_Measure();
 				
-				// Save
-				Ext.Manager3D_SaveResult("M",spreadsheets_dir + "/"+ crop_image_basename + "_"+ cur_frame_name +".csv");
+				// Save number of objects
+				Ext.Manager3D_SaveResult("M",spreadsheets_dir + "/"+ crop_image_basename + "_"+ cur_frame_name +"_objects.csv");
 				Ext.Manager3D_CloseResult("M");
 				Ext.Manager3D_Reset();
+				close(im_name_for_num_of_obj);
+				close(masked_crop);
 				close(cur_frame_name);
-				close("MASK_crop_" + cur_frame_name);
-			} // frame
-			
-		} // channel
+			} // for frame
+		} // for channel
         close("cur_crop_all_dims");
-    }
-}
+    } // if tif
+} // for crop
 waitForUser("done script");
