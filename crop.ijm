@@ -110,12 +110,14 @@ for (series=1; series<=seriesCount; ++series) {
     	}
 		makeRectangle(x, y, CROP_WIDTH, CROP_WIDTH);
 		print("Reading crop from large image...");
+		print("x, y, CROP_WIDTH, CROP_WIDTH:", x, y, CROP_WIDTH, CROP_WIDTH);
 
 		// Load crop
 		run("Bio-Formats Importer", "open=[" + orig_filename + "] color_mode=Default crop " +
 			" rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT " + 
-        	" x_coordinate_1=" + x +" width_1=" + CROP_WIDTH + 
-        	" y_coordinate_1=" + y +" height_1=" + CROP_WIDTH );
+			" series_"+series +
+        	" x_coordinate_" + series + "=" + x +" width_" + series + "=" + CROP_WIDTH + 
+        	" y_coordinate_" + series + "=" + y +" height_" + series + "=" + CROP_WIDTH );
         print("done reading");
         crop_number += 1;
         crop_name = "crop_S" + series +"_CROPNUM" + crop_number + ".tif";
