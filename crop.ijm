@@ -9,7 +9,7 @@ MINIMUM_APICOPLAST_AREA = 7; // [microns] Smallest apicoplast size for each crop
 close("*");
 print("\\Clear");
 run("Bio-Formats Macro Extensions"); // required for Ext.getSeriesCount
-
+DEBUG = false;
 
 // Ask for image from user
 debug_image = call("java.lang.System.getenv", "MALARIA_IMAGE");
@@ -24,6 +24,13 @@ dirname = File.getParent(orig_filename);
 basename = File.getNameWithoutExtension(orig_filename);
 dirCropOutput = dirname + File.separator + basename + "_crops";
 print("dirCropOutput:", dirCropOutput);
+if (File.isDirectory(dirCropOutput) && !DEBUG) {
+	exit("Directory already exists: " + dirCropOutput);
+}
+else {
+	File.makeDirectory(dirCropOutput);
+}
+
 
 // Read from large image the number of series/channels without opening the image
 print("intitializeing file:", orig_filename);
@@ -83,7 +90,6 @@ for (series=1; series<=seriesCount; ++series) {
 	
 
 	// Loop on ROIs and crop to files
-	File.makeDirectory(dirCropOutput);
 	File.makeDirectory(dirCropOutput+ "/thumbnails");
 	selectWindow("thresh");
 	crop_number = 0;
