@@ -1,14 +1,12 @@
-// Analyze crop images. 
-// Segment the apicoplast and measure. Get the mean intensity and volume.
+// Analyze crop images.
+// Segment the apicoplast and measure. Measure the number of objects and volume.
 // 
 // Plugin requirements:
-// - 3D ImageJ Suite
+// - 3D ImageJ Suite. Installed through FIJI Updcate. Developers: https://mcib3d.frama.io/3d-suite-imagej/
 
-// TODO
-// - Mean intensity
 
 APICOPLAST_THRESHOLD = 500;
-DEBUG = true;
+DEBUG = false;
 
 close("*");
 run("Clear Results");
@@ -50,14 +48,13 @@ for (crop_file_i = 0; crop_file_i < lengthOf(filelist); crop_file_i++) {
 		print(width, height, channels, slices, frames);
 		close();
 		if (DEBUG) {
-			frames = 2;
+			frames = 4;
 		}
 		// Open crop
 		run("Bio-Formats Importer", "open=" + crop_image_path + " color_mode=Default rois_import=[ROI manager] " +
 				"view=Hyperstack stack_order=XYCZT  ");
 		rename("cur_crop_all_dims");
-		print(crop_image_path);
-		
+		print("filename:", crop_image_path);
 		
 		// Open each channel except the last
 		for (channel=1; channel<channels; channel++ ) {
@@ -103,7 +100,7 @@ for (crop_file_i = 0; crop_file_i < lengthOf(filelist); crop_file_i++) {
 					Ext.Manager3D_CloseResult("M");
 				}
 				
-				// Measure number of objects
+				// Measure number of objects (3D connected components)
 				//
 				selectImage(masked_crop);
 				Ext.Manager3D_Reset();
@@ -120,14 +117,20 @@ for (crop_file_i = 0; crop_file_i < lengthOf(filelist); crop_file_i++) {
 						Ext.Manager3D_Select(object);
 						Ext.Manager3D_GetName(object, obj_name);
 						Ext.Manager3D_Rename(cur_frame_name + "_" + obj_name);
+						// debug
+//						waitForUser("Manager3D_Rename:" + cur_frame_name + "_" + obj_name );
 					}
 					Ext.Manager3D_DeselectAll(); // to measure all objects
 					Ext.Manager3D_Measure();
+					// Save number of objects
+					// debug
+//					waitForUser("before "+spreadsheets_dir + "/"+ crop_image_basename + "_"+ cur_frame_name +"_objects.csv");
+					Ext.Manager3D_SaveResult("M",spreadsheets_dir + "/"+ crop_image_basename + "_"+ cur_frame_name +"_objects.csv");
+					// debug
+//					waitForUser("after "+spreadsheets_dir + "/"+ crop_image_basename + "_"+ cur_frame_name +"_objects.csv");
+					Ext.Manager3D_CloseResult("M");
 				}
 				
-				// Save number of objects
-				Ext.Manager3D_SaveResult("M",spreadsheets_dir + "/"+ crop_image_basename + "_"+ cur_frame_name +"_objects.csv");
-				Ext.Manager3D_CloseResult("M");
 				Ext.Manager3D_Reset();
 				close(im_name_for_num_of_obj);
 				close(masked_crop);
