@@ -4,6 +4,7 @@
 // Plugin requirements:
 // - 3D ImageJ Suite. Installed through FIJI Updcate. Developers: https://mcib3d.frama.io/3d-suite-imagej/
 
+// TODO zip spreadsheets
 
 APICOPLAST_THRESHOLD = 500;
 DEBUG = false;
@@ -24,7 +25,14 @@ print("orig_filename:", orig_filename);
 dirname = File.getParent(orig_filename);
 basename = File.getNameWithoutExtension(orig_filename);
 crops_dir = dirname + File.separator + basename + "_crops";
+
 print("crops_dir:", crops_dir);
+if (File.isDirectory(crops_dir)) {
+	exit("Directory already exists: " + crops_dir);
+}
+else {
+	File.makeDirectory(crops_dir);
+}
 spreadsheets_dir = crops_dir + "/spreadsheets";
 File.makeDirectory(spreadsheets_dir);
 
