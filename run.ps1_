@@ -1,6 +1,6 @@
 Add-Type -AssemblyName System.Windows.Forms
 $OpenFileDialog = New-Object System.Windows.Forms.OpenFileDialog
-#$OpenFileDialog.InitialDirectory = ìC:\î
+#$OpenFileDialog.InitialDirectory = ‚ÄúC:\‚Äù
 $OpenFileDialog.Title = "Please select image file"
 
 $OpenFileDialog.ShowDialog()
