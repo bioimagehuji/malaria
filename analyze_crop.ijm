@@ -26,8 +26,9 @@ dirname = File.getParent(orig_filename);
 basename = File.getNameWithoutExtension(orig_filename);
 crops_dir = dirname + File.separator + basename + "_crops";
 print("crops_dir:", crops_dir);
-spreadsheets_dir = crops_dir + "/spreadsheets";
+spreadsheets_dir = dirname + File.separator + basename + "_spreadsheets";
 File.makeDirectory(spreadsheets_dir);
+
 
 run("3D Manager");
 Ext.Manager3D_Reset();
@@ -77,30 +78,6 @@ for (crop_file_i = 0; crop_file_i < lengthOf(filelist); crop_file_i++) {
 				run("3D Manager Options", "volume integrated_density ");
 				
 				
-				// Measure Volume
-				//
-				selectImage(masked_crop);
-				Ext.Manager3D_Reset();
-				Ext.Manager3D_AddImage();
-				// see https://mcib3d.frama.io/3d-suite-imagej/uploads/MacrosFunctionsRoiManager3D.pdf
-				Ext.Manager3D_Count(nb_obj);
-				print("number of objects",nb_obj);
-				
-				if (nb_obj > 1) {
-					exit("Numbner of objects in mask should be 1, but found " + nb_obj);
-				}					
-				if (nb_obj > 0) {
-					Ext.Manager3D_Select(0);
-					Ext.Manager3D_GetName(0, obj_name);
-					Ext.Manager3D_Rename(cur_frame_name + "_" + obj_name);
-					Ext.Manager3D_DeselectAll(); // to measure all objects
-					Ext.Manager3D_Measure();
-					// Save
-					Ext.Manager3D_SaveResult("M",spreadsheets_dir + "/"+ crop_image_basename + "_"+ cur_frame_name +"_volume.csv"); // "M" saves Measure 
-					// Source: google: RoiManager3D_2.java
-					Ext.Manager3D_CloseResult("M");
-				}
-				
 				// Measure number of objects (3D connected components)
 				//
 				selectImage(masked_crop);
@@ -118,17 +95,11 @@ for (crop_file_i = 0; crop_file_i < lengthOf(filelist); crop_file_i++) {
 						Ext.Manager3D_Select(object);
 						Ext.Manager3D_GetName(object, obj_name);
 						Ext.Manager3D_Rename(cur_frame_name + "_" + obj_name);
-						// debug
-//						waitForUser("Manager3D_Rename:" + cur_frame_name + "_" + obj_name );
 					}
 					Ext.Manager3D_DeselectAll(); // to measure all objects
 					Ext.Manager3D_Measure();
 					// Save number of objects
-					// debug
-//					waitForUser("before "+spreadsheets_dir + "/"+ crop_image_basename + "_"+ cur_frame_name +"_objects.csv");
 					Ext.Manager3D_SaveResult("M",spreadsheets_dir + "/"+ crop_image_basename + "_"+ cur_frame_name +"_objects.csv");
-					// debug
-//					waitForUser("after "+spreadsheets_dir + "/"+ crop_image_basename + "_"+ cur_frame_name +"_objects.csv");
 					Ext.Manager3D_CloseResult("M");
 				}
 				
@@ -141,4 +112,5 @@ for (crop_file_i = 0; crop_file_i < lengthOf(filelist); crop_file_i++) {
         close("cur_crop_all_dims");
     } // if tif
 } // for crop
-waitForUser("done script");
+
+waitForUser("Result saved in:" + spreadsheets_dir);
