@@ -10,26 +10,42 @@ close("*");
 print("\\Clear");
 run("Bio-Formats Macro Extensions"); // required for Ext.getSeriesCount
 DEBUG = false;
+print("DEBUG: " + DEBUG);
+// Envionment variables set e.g. by the shell script
+MALARIA_SHELL_SCRIPT = call("java.lang.System.getenv", "MALARIA_SHELL_SCRIPT");
+print("MALARIA_SHELL_SCRIPT: " + MALARIA_SHELL_SCRIPT);
+MALARIA_MAX_CROPS = call("java.lang.System.getenv", "MALARIA_MAX_CROPS");
+print("MALARIA_MAX_CROPS: " + MALARIA_MAX_CROPS);
+MALARIA_IMAGE = call("java.lang.System.getenv", "MALARIA_IMAGE");
+print("MALARIA_IMAGE: " + MALARIA_IMAGE);
+
 
 // Ask for image from user
-debug_image = call("java.lang.System.getenv", "MALARIA_IMAGE");
-if (debug_image==0) {  // if MALARIA_IMAGE environment variable not defined
+if (MALARIA_IMAGE==0) {  // if MALARIA_IMAGE environment variable not defined
 	orig_filename = File.openDialog("Choose large image");
 } 
 else {
-	orig_filename = debug_image;
+	orig_filename = MALARIA_IMAGE;
 }
 print("orig_filename:", orig_filename);
+
+// Output directory
 dirname = File.getParent(orig_filename);
 basename = File.getNameWithoutExtension(orig_filename);
-dirCropOutput = dirname + File.separator + basename + "_crops";
-print("dirCropOutput:", dirCropOutput);
-if (File.isDirectory(dirCropOutput) && !DEBUG) {
-	exit("Directory already exists: " + dirCropOutput);
+crops_dir_output = dirname + File.separator + basename + "_crops";  // Created only when script finshes successfully
+crops_dir_output_tmp = crops_dir_output + "_tmp";  // Renamed at the end of the script to crops_dir_output
+print("crops_dir_output:", crops_dir_output);
+if (File.isDirectory(crops_dir_output) && !DEBUG) {
+	exit("Directory already exists: " + crops_dir_output);
+}
+if (File.isDirectory(crops_dir_output_tmp) && !DEBUG) {
+	exit("Directory already exists: " + crops_dir_output_tmp);
 }
 else {
-	File.makeDirectory(dirCropOutput);
+	File.makeDirectory(crops_dir_output_tmp);
 }
+
+
 
 
 // Read from large image the number of series/channels without opening the image
@@ -53,8 +69,8 @@ for (series=1; series<=seriesCount; ++series) {
 	run("Bio-Formats Importer", "open=[" + orig_filename + "] color_mode=Default rois_import=[ROI manager] " + 
 		"specify_range view=Hyperstack stack_order=XYCZT series_"+series +
 		" c_begin_"+series+"=1 c_end_"+series+"=" + channels_to_open +	" c_step_1=1 " + 
-		"  z_step_"+series+"=3 " +
-		"  t_step_"+series+"=3 ");
+		"  z_step_"+series+"=5 " +
+		"  t_step_"+series+"=5 ");
 	rename("orig_series");
 
 	// Do max intensity projection of Z,C,T to capture the location of the cells/crops
@@ -80,6 +96,7 @@ for (series=1; series<=seriesCount; ++series) {
 		run("Convert to Mask");
 	}
 
+
 	// Projection Channels
 	if (channels_to_open == 2) {
 		run("Z Project...", "projection=[Max Intensity]");  // Merge 2 color channels to one channel
@@ -90,9 +107,13 @@ for (series=1; series<=seriesCount; ++series) {
 	
 
 	// Loop on ROIs and crop to files
-	File.makeDirectory(dirCropOutput+ "/thumbnails");
+	File.makeDirectory(crops_dir_output_tmp+ "/thumbnails");
 	selectWindow("thresh");
 	crop_number = 0;
+    max_crops = roiManager("count");
+    if (MALARIA_MAX_CROPS > 0) {
+    	max_crops = minOf(max_crops, MALARIA_MAX_CROPS);
+    }
     for (roi_id=0; roi_id<roiManager("count"); ++roi_id) {
         print("ROI+1:", roi_id+1);
         roiManager("Select", roi_id);
@@ -127,13 +148,13 @@ for (series=1; series<=seriesCount; ++series) {
         print("done reading");
         crop_number += 1;
         crop_name = "crop_S" + series +"_CROPNUM" + crop_number + ".tif";
-        saveAs("Tiff", dirCropOutput+File.separator+crop_name);
+        saveAs("Tiff", crops_dir_output_tmp+File.separator+crop_name);
 
         // Create a 2D thumbnail image of crop projected in Z an T with threshold
         selectWindow("thresh");
         run("Duplicate...", "title=crop_thumbnail"); // crop the thumbnail 2D image
 		thumbnail_name = "thumbnail_"+ crop_name;
-        saveAs("Tiff", dirCropOutput+ "/thumbnails/" + thumbnail_name);
+        saveAs("Tiff", crops_dir_output_tmp+ "/thumbnails/" + thumbnail_name);
 
 		close(crop_name);
         close(thumbnail_name);
@@ -146,5 +167,13 @@ for (series=1; series<=seriesCount; ++series) {
     close("orig_series");
     print("Finished series " + series);
 } // series
+
 print("Finished large image");
-waitForUser("Done");
+File.rename(crops_dir_output_tmp, crops_dir_output);  // This signals the shell script that this script finished successfully
+
+if (MALARIA_SHELL_SCRIPT!=0) { // this macro was called from a shell script
+	run("Quit");  // Quit FIJI so that the outer script can continue
+}
+else {  
+	waitForUser("Done");
+}
