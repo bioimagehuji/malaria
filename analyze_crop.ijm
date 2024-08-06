@@ -6,7 +6,8 @@
 
 // TODO zip spreadsheets
 
-APICOPLAST_THRESHOLD = 500;
+APICOPLAST_THRESHOLD = 750;
+NUCLEUS_THRESHOLD = 1000;
 DEBUG = false;
 
 close("*");
@@ -69,7 +70,11 @@ for (crop_file_i = 0; crop_file_i < lengthOf(filelist); crop_file_i++) {
 				// Prepcrocess before segmentation
 				run("Median...", "radius=3 stack");
 				// Segmentation
-				setThreshold(APICOPLAST_THRESHOLD,65535);
+				if (channel==1) {
+					setThreshold(APICOPLAST_THRESHOLD,65535);
+				} else if (channel==2) {
+					setThreshold(NUCLEUS_THRESHOLD,65535);
+				}
 				run("Convert to Mask", "background=Dark black create stack");
 				masked_crop = "MASK_crop_" + cur_frame_name;
 				rename(masked_crop);
