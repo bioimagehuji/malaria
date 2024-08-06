@@ -81,7 +81,9 @@ for (crop_file_i = 0; crop_file_i < lengthOf(filelist); crop_file_i++) {
 				print("masked_crop:", masked_crop);
 
 				run("3D Manager Options", "volume integrated_density ");
-				
+				if (DEBUG && frame==1) {
+					return;
+				}
 				
 				// Measure number of objects (3D connected components)
 				//
