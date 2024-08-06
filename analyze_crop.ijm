@@ -68,7 +68,7 @@ for (crop_file_i = 0; crop_file_i < lengthOf(filelist); crop_file_i++) {
 				cur_frame_name = "C" + channel + "_T"+frame;
 				run("Duplicate...", "title=" + cur_frame_name + " duplicate channels=" + channel + " frames=" + frame);
 				// Prepcrocess before segmentation
-				run("Median...", "radius=3 stack");
+				//         run("Median...", "radius=3 stack"); // Removed because smoothed too much and added minimum object size in colab
 				// Segmentation
 				if (channel==1) {
 					setThreshold(APICOPLAST_THRESHOLD,65535);
