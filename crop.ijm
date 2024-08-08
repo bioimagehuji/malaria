@@ -4,12 +4,14 @@
 // User parameters
 CROP_WIDTH = 150; // Width/height (in pixels) of each cell crop
 MINIMUM_APICOPLAST_AREA = 7; // [microns] Smallest apicoplast size for each crop. Area, in microns, after 2D projection.
+DOWNSAMPLE_Z = 5;
+DOWNSAMPLE_T = 5;
+DEBUG = false;
 
 // Initialize
 close("*");
 print("\\Clear");
 run("Bio-Formats Macro Extensions"); // required for Ext.getSeriesCount
-DEBUG = false;
 print("DEBUG: " + DEBUG);
 // Envionment variables set e.g. by the shell script
 MALARIA_SHELL_SCRIPT = call("java.lang.System.getenv", "MALARIA_SHELL_SCRIPT");
@@ -47,7 +49,6 @@ else {
 
 
 
-
 // Read from large image the number of series/channels without opening the image
 print("intitializeing file:", orig_filename);
 Ext.setId(orig_filename);
@@ -57,20 +58,29 @@ Ext.getSizeC(channels);
 print("channels:", channels);
 Ext.close();
 
+
+
 // Each series is a field from the microscope with several cells to crop
 for (series=1; series<=seriesCount; ++series) {
 	// Only open first one or two channels which are fluorescent, and not the last channel, which is brightfield.
 	channels_to_open = channels - 1;
 	print("channels_to_open:", channels_to_open);
-
+	if (seriesCount==1) {
+		slices_open_lines = " c_begin=1 c_end=" + channels_to_open + " c_step=1 " + 
+			" z_step=" + DOWNSAMPLE_Z  + 
+			" t_step=" + DOWNSAMPLE_T;
+	} else {
+		slices_open_lines = " c_begin_"+series+"=1 c_end_"+series+"=" + channels_to_open +	" c_step_"+series+"=1 " + 
+		"  z_step_"+series+"=" + DOWNSAMPLE_Z +
+		"  t_step_"+series+"=" + DOWNSAMPLE_T;
+	}
 	// Open each series from the large image. 
 	// For speed, open only 1 in 3 z-slices and 1-in-3 time frames.
 	// Also, open only the first one or two channels (which are fluorescent, and not the last channel, which is brightfield.)
-	run("Bio-Formats Importer", "open=[" + orig_filename + "] color_mode=Default rois_import=[ROI manager] " + 
-		"specify_range view=Hyperstack stack_order=XYCZT series_"+series +
-		" c_begin_"+series+"=1 c_end_"+series+"=" + channels_to_open +	" c_step_1=1 " + 
-		"  z_step_"+series+"=5 " +
-		"  t_step_"+series+"=5 ");
+	run("Bio-Formats Importer", "open=[" + orig_filename + "] " + 
+		" color_mode=Default rois_import=[ROI manager] " + 
+		" specify_range view=Hyperstack stack_order=XYCZT series_"+series +
+		slices_open_lines);
 	rename("orig_series");
 
 	// Do max intensity projection of Z,C,T to capture the location of the cells/crops
