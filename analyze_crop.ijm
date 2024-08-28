@@ -33,6 +33,8 @@ File.makeDirectory(spreadsheets_dir);
 
 run("3D Manager");
 Ext.Manager3D_Reset();
+run("3D Manager Options", "volume surface integrated_density");
+
 
 filelist = getFileList(crops_dir);
 for (crop_file_i = 0; crop_file_i < lengthOf(filelist); crop_file_i++) {
@@ -80,7 +82,6 @@ for (crop_file_i = 0; crop_file_i < lengthOf(filelist); crop_file_i++) {
 				rename(masked_crop);
 				print("masked_crop:", masked_crop);
 
-				run("3D Manager Options", "volume integrated_density ");
 				if (DEBUG && frame==1) {
 					return;
 				}
