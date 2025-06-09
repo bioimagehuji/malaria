@@ -1,0 +1,10 @@
+run("In [+]");
+run("In [+]");
+Stack.setPosition(1,11,1);
+run("Enhance Contrast", "saturated=0.35");
+Stack.setPosition(2,11,1);
+run("Enhance Contrast", "saturated=0.35");
+Stack.setPosition(3,11,1);
+run("Enhance Contrast", "saturated=0.35");
+Stack.setPosition(4,11,1);
+run("Make Composite");
