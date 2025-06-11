@@ -6,8 +6,9 @@
 
 // TODO zip spreadsheets
 
-APICOPLAST_THRESHOLD = 750;
+APICOPLAST_THRESHOLD = 700;
 NUCLEUS_THRESHOLD = 1000;
+TUBULIN_THRESHOLD = 600;
 DEBUG = false;
 
 close("*");
@@ -62,39 +63,43 @@ for (crop_file_i = 0; crop_file_i < lengthOf(filelist); crop_file_i++) {
 		print("filename:", crop_image_path);
 		
 		// Open each channel except the last
-		for (channel=1; channel<channels; channel++ ) {
-			print("ch", channel);
-			for (frame=1; frame<=frames; frame++ ) {
-				print("frame:", frame);
+		for (frame=1; frame<=frames; frame++ ) {
+			print("frame:", frame);
+			for (channel=1; channel<channels; channel++ ) {
+				print("ch", channel);
+
 				// Open
-				cur_frame_name = "C" + channel + "_T"+frame;
-				run("Duplicate...", "title=" + cur_frame_name + " duplicate channels=" + channel + " frames=" + frame);
+				cur_frame_channel_name = "C" + channel + "_T"+frame;
+				selectImage("cur_crop_all_dims");
+				run("Duplicate...", "title=" + cur_frame_channel_name + " duplicate channels=" + channel + " frames=" + frame);
 				// Prepcrocess before segmentation
 				//         run("Median...", "radius=3 stack"); // Removed because smoothed too much and added minimum object size in colab
+				
 				// Segmentation
 				if (channel==1) {
 					setThreshold(APICOPLAST_THRESHOLD,65535);
 				} else if (channel==2) {
 					setThreshold(NUCLEUS_THRESHOLD,65535);
+				} else if (channel==3) {
+					setThreshold(TUBULIN_THRESHOLD,65535);
 				}
 				run("Convert to Mask", "background=Dark black create stack");
-				masked_crop = "MASK_crop_" + cur_frame_name;
+				masked_crop = "MASK_crop_" + cur_frame_channel_name;
 				rename(masked_crop);
 				print("masked_crop:", masked_crop);
 
-				if (DEBUG && frame==1) {
-					return;
-				}
+				
+
 				
 				// Measure number of objects (3D connected components)
 				//
 				selectImage(masked_crop);
-				Ext.Manager3D_Reset();
+//				Ext.Manager3D_Reset();
 				Ext.Manager3D_Segment(128, 255);
 				Ext.Manager3D_AddImage();
 				run("3D Manager");  // update to see the objects in the manager
 				
-				im_name_for_num_of_obj = cur_frame_name+"_3dseg";
+				im_name_for_num_of_obj = cur_frame_channel_name+"_3dseg";
 				rename(im_name_for_num_of_obj);
 				Ext.Manager3D_Count(nb_obj);
 				print("number of objects",nb_obj);
@@ -102,23 +107,47 @@ for (crop_file_i = 0; crop_file_i < lengthOf(filelist); crop_file_i++) {
 					for (object=0; object<nb_obj;object++) {
 						Ext.Manager3D_Select(object);
 						Ext.Manager3D_GetName(object, obj_name);
-						Ext.Manager3D_Rename(cur_frame_name + "_" + obj_name);
+						print("object, obj_name " + object + " " + obj_name);
+						if (startsWith(obj_name, "obj")) {
+							Ext.Manager3D_Rename(cur_frame_channel_name + "_" + obj_name);
+							print("renamed to: " + cur_frame_channel_name + "_" + obj_name);
+						}
 					}
-					Ext.Manager3D_DeselectAll(); // to measure all objects
-					Ext.Manager3D_Measure();
+//					Ext.Manager3D_DeselectAll(); // to measure all objects
+//					Ext.Manager3D_Measure();
 					// Save number of objects
-					Ext.Manager3D_SaveResult("M",spreadsheets_dir + "/"+ crop_image_basename + "_"+ cur_frame_name +"_objects.csv");
-					Ext.Manager3D_CloseResult("M");
-				}
 				
-				Ext.Manager3D_Reset();
+//					if (DEBUG && (frame==1) && (channel == 3)) {
+//						waitForUser("before distance ");
+//						Ext.Manager3D_Distance();
+//						waitForUser("after  distance ");
+//						run("3D Filter Objects", "descriptor=Volume(pix) min=2 max=99999");
+//					}
+				}
+			}
+			Ext.Manager3D_DeselectAll(); // to measure all objects
+			Ext.Manager3D_Measure();
+			print(spreadsheets_dir + "/"+ crop_image_basename + "_"+ cur_frame_channel_name +"_objects.csv");
+			Ext.Manager3D_SaveResult("M",spreadsheets_dir + "/"+ crop_image_basename + "_T"+frame +"_objects.csv");
+			Ext.Manager3D_CloseResult("M");
+			
+			Ext.Manager3D_Distance();
+			Ext.Manager3D_SaveResult("D",spreadsheets_dir + "/"+ crop_image_basename + "_T"+frame +"_objects.csv");
+			Ext.Manager3D_CloseResult("D");
+			Ext.Manager3D_Reset();
+			
+			for (channel=1; channel<channels; channel++ ) {
+				cur_frame_channel_name = "C" + channel + "_T"+frame;
+				im_name_for_num_of_obj = cur_frame_channel_name+"_3dseg";
 				close(im_name_for_num_of_obj);
+				masked_crop = "MASK_crop_" + cur_frame_channel_name;
 				close(masked_crop);
-				close(cur_frame_name);
-			} // for frame
-		} // for channel
+				close(cur_frame_channel_name);
+			}
+//			waitForUser("closed all channel windows");
+		}
         close("cur_crop_all_dims");
-    } // if tif
-} // for crop
+    }
+}
 
 waitForUser("Result saved in:" + spreadsheets_dir);
